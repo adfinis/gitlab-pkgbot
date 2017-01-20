@@ -21,8 +21,8 @@ class GitlabArtifactsDownloader:
         self.project = False
         self.git = gitlab.Gitlab(
             gitlab_url,
-            gitlab_token,
-            ssl_verify=False
+            gitlab_token
+            #ssl_verify=False
         )
 
 

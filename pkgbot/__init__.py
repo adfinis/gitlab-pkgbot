@@ -19,6 +19,7 @@ import tempfile
 import shutil
 from pprint import pprint
 import glob
+import urllib3
 
 from distutils.dir_util import copy_tree
 from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
@@ -50,6 +51,8 @@ def process_request(data):
     repo = "/".join(data['repository']['homepage'].split("/")[3:])
     proj_logger = get_logger(project=repo)
     proj_logger.info("Process build trigger")
+    requests.packages.urllib3.disable_warnings()
+
     git = GitlabArtifactsDownloader(conf['gitlab']['url'], conf['gitlab']['token'])
     config_file = "/{0}/raw/{1}/.pkg-bot.yml".format( repo, data['ref'] )
 
