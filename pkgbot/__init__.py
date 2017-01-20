@@ -47,29 +47,38 @@ def process_request(data):
     """
     Function to process an request from GitLab
     """
+
     global conf
-    repo = "/".join(data['repository']['homepage'].split("/")[3:])
+    repo = "/".join( data['repository']['homepage'].split("/")[3:] )
     proj_logger = get_logger(project=repo)
-    proj_logger.info("Process build trigger")
+    proj_logger.info( "Process build trigger" )
     requests.packages.urllib3.disable_warnings()
 
-    git = GitlabArtifactsDownloader(conf['gitlab']['url'], conf['gitlab']['token'])
-    config_file = "/{0}/raw/{1}/.pkg-bot.yml".format( repo, data['ref'] )
+    git = GitlabArtifactsDownloader(
+        conf['gitlab']['url'],
+        conf['gitlab']['token']
+    )
 
+    config_file = "/{0}/raw/{1}/.pkg-bot.yml".format(
+        repo,
+        data['ref']
+    )
+
+    # check .pkg-bot.yml
     # TODO: better error checking
     try:
-        repo_conf_dl = git.download_raw_file(config_file)
-        rc = yaml.load(repo_conf_dl.text)
-        repo_conf = rc['pkgbot']
-        pkg_data = repo_conf['packages']
+        repo_conf_dl   = git.download_raw_file(config_file)
+        rc             = yaml.load(repo_conf_dl.text)
+        repo_conf      = rc['pkgbot']
+        pkg_data       = repo_conf['packages']
         valid_branches = repo_conf['branches']
     except:
-        proj_logger.error("config for repo not found or invalid")
+        proj_logger.error( "Config for repo not found or invalid")
         return
 
     # branch is required in config
     if data['ref'] not in valid_branches:
-        proj_logger.info("branch: {0} does not match any configured".format(
+        proj_logger.info( "Branch: {0} does not match any configured".format(
             data['ref']
         ))
         return
@@ -77,7 +86,7 @@ def process_request(data):
     # stages are optional
     if 'stages' in repo_conf:
         if data['build_stage'] not in repo_conf['stages']:
-            proj_logger.info("Build stage {0} does not match any configured".format(
+            proj_logger.info( "Build stage {0} does not match any configured".format(
                 data['build_stage']
             ))
             return
@@ -85,18 +94,21 @@ def process_request(data):
     # gitlab ci will trigger an build done event and then start to upload the artifacts.
     # users can configure an delay before downloading artifacts
     if 'download-delay' in repo_conf:
-        proj_logger.info("Config has delay in it, sleep for {0} secs".format(repo_conf['download-delay']))
-        time.sleep(repo_conf['download-delay'])
+        proj_logger.info( "Config has delay in it, sleep for {0} secs".format(
+            repo_conf['download-delay']
+        ))
+        time.sleep( repo_conf['download-delay'] )
 
     # now we are ready to fetch the build artifacts
-    dl_path = tempfile.mkdtemp()
+    dl_path       = tempfile.mkdtemp()
     artifacts_zip = "{0}/artifacts.zip".format( dl_path )
-    git.select_project(data['project_id'])
+
+    # download unpack and remove artifacts zip file
+    git.select_project( data['project_id'] )
     git.download_last_artifacts( artifacts_zip )
     git.unzip( artifacts_zip, dl_path )
-    # remove artifacts zip
-    os.remove(artifacts_zip)
-    proj_logger.info("downloaded to: {0}".format(dl_path))
+    os.remove( artifacts_zip )
+    proj_logger.info( "Downloaded to: {0}".format( dl_path ) )
 
     # match packages with downloaded artifact files
     pkg_data = repo_conf['packages']
@@ -118,7 +130,7 @@ def process_request(data):
                 # we consider it as an error, if more than one matches found for
                 # a single glob
                 if len(glob_match)>1:
-                    proj_logger.error("Multiple matches on distro: {0} version: {1}  glob: '{2}'".format(
+                    proj_logger.error( "Multiple matches on distro: {0} version: {1}  glob: '{2}'".format(
                         distro,
                         version,
                         item
@@ -128,7 +140,7 @@ def process_request(data):
                     pkgs_match[distro][version].append(glob_match[0])
             # if nothing found just delete the matches-element
             if not pkgs_match[distro][version]:
-                proj_logger.warning("No matches for distro: {0} version: {1}".format(
+                proj_logger.warning( "No matches for distro: {0} version: {1}".format(
                     distro,
                     version,
                 ))
@@ -136,7 +148,7 @@ def process_request(data):
 
     # if any errors found, cancel
     if error_count>0:
-        proj_logger.error("Found {0} errors, will not continue".format( error_count ))
+        proj_logger.error( "Found {0} errors, will not continue".format( error_count ))
         shutil.rmtree(dl_path)
         return
 
@@ -144,7 +156,7 @@ def process_request(data):
     for distro in pkgs_match:
         for version in pkgs_match[distro]:
             for pkg in pkgs_match[distro][version]:
-                proj_logger.info("ADDPKG - distro: {0} version: {1} package: {2}".format(
+                proj_logger.info( "ADDPKG - distro: {0} version: {1} package: {2}".format(
                     distro,
                     version,
                     pkg
@@ -153,7 +165,7 @@ def process_request(data):
 
     # remove temporary dir
     shutil.rmtree(dl_path)
-    proj_logger.info("done adding packages")
+    proj_logger.info( "Done adding packages" )
     return
 
 
@@ -173,7 +185,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         global conf
-        data_string = self.rfile.read(int(self.headers['Content-Length']))
+        data_string = self.rfile.read( int(self.headers['Content-Length']) )
         data = json.loads(data_string)
         try:
              if (data['object_kind'] == "build" and data['build_status']=='success'):
@@ -188,18 +200,30 @@ class RequestHandler(BaseHTTPRequestHandler):
         logger.info("REQUEST: {0}".format(logstr))
 
 
+
 def main():
     global conf
     # load config
-    with open(sys.argv[1]) as f:
-        conf = yaml.load(f)
+    try:
+        with open(sys.argv[1]) as f:
+            conf = yaml.load(f)
+    except IOError as e:
+        print e
+        sys.exit(1)
+    except (yaml.scanner.ScannerError, yaml.parser.ParserError):
+        print("ERROR: Cannot load config, YAML parser error")
+        sys.exit(1)
     try:
         # start an http server
         server = HTTPServer(('', conf['pkgbot']['port']), RequestHandler )
-        logger.info("Started server on port {0}".format(conf['pkgbot']['port']))
+        logger.info( "Started server on port {0}".format(
+            conf['pkgbot']['port']
+        ))
         server.serve_forever()
     except KeyboardInterrupt:
         server.socket.close()
+
+
 
 if __name__ == "__main__":
     main()
