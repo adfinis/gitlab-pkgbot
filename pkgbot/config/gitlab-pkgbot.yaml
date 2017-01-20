@@ -1,0 +1,6 @@
+pkgbot:
+  port: 8083
+
+gitlab:
+  url: https://gitlab.example.com
+  token: disMammiIschEsToken
