@@ -26,34 +26,19 @@ from GitlabArtifacts import GitlabArtifactsDownloader
 
 
 # init logging
-logger = logging.getLogger('adsy-pkgbot')
-log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch = logging.StreamHandler()
-ch.setFormatter(log_formatter)
-logger.setLevel(20)
-logger.addHandler(ch)
+def get_logger( prefix="adsy-pkgbot", project=False ):
+    loggername = prefix
+    if project:
+        loggername = "{0} - {1}".format(prefix, project)
+    logger = logging.getLogger(loggername)
+    log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch = logging.StreamHandler()
+    ch.setFormatter(log_formatter)
+    logger.setLevel(20)
+    logger.addHandler(ch)
+    return logger
 
-
-
-class PkgRepoFileMatcher:
-
-    def __init__(self, root_path):
-        self.packages = []
-        self.error = False
-        self.root_path = root_path
-
-    def match(sel, data):
-        for distro in data:
-            for package in data[distro]:
-                print("distro: {0} pkg:".format(distro))
-                glob_list = data[distro][package]
-                pprint(glob_list)
-
-
-    def match_packages(self, distro, input_list):
-        for line in input_list:
-            print(line)
-
+logger = get_logger()
 
 
 
@@ -62,28 +47,45 @@ def process_request(data):
     Function to process an request from GitLab
     """
     global conf
-    logger.info("Process build trigger")
-    git = GitlabArtifactsDownloader(conf['gitlab']['url'], conf['gitlab']['token'])
     repo = "/".join(data['repository']['homepage'].split("/")[3:])
+    proj_logger = get_logger(project=repo)
+    proj_logger.info("Process build trigger")
+    git = GitlabArtifactsDownloader(conf['gitlab']['url'], conf['gitlab']['token'])
     config_file = "/{0}/raw/{1}/.pkg-bot.yml".format( repo, data['ref'] )
+
+    # TODO: better error checking
     try:
         repo_conf_dl = git.download_raw_file(config_file)
         rc = yaml.load(repo_conf_dl.text)
         repo_conf = rc['pkgbot']
+        pkg_data = repo_conf['packages']
+        valid_branches = repo_conf['branches']
     except:
-        logger.error("config for repo not found")
+        proj_logger.error("config for repo not found or invalid")
         return
 
+    # branch is required in config
+    if data['ref'] not in valid_branches:
+        proj_logger.info("branch: {0} does not match any configured".format(
+            data['ref']
+        ))
+        return
+
+    # stages are optional
     if 'stages' in repo_conf:
         if data['build_stage'] not in repo_conf['stages']:
-            logger.info('do not fetch, stage does not match')
+            proj_logger.info("Build stage {0} does not match any configured".format(
+                data['build_stage']
+            ))
             return
 
+    # gitlab ci will trigger an build done event and then start to upload the artifacts.
+    # users can configure an delay before downloading artifacts
     if 'download-delay' in repo_conf:
-        logger.info("Config has delay in it, sleep for {0} secs".format(repo_conf['download-delay']))
+        proj_logger.info("Config has delay in it, sleep for {0} secs".format(repo_conf['download-delay']))
         time.sleep(repo_conf['download-delay'])
 
-    # now we are ready to fetch
+    # now we are ready to fetch the build artifacts
     dl_path = tempfile.mkdtemp()
     artifacts_zip = "{0}/artifacts.zip".format( dl_path )
     git.select_project(data['project_id'])
@@ -91,10 +93,9 @@ def process_request(data):
     git.unzip( artifacts_zip, dl_path )
     # remove artifacts zip
     os.remove(artifacts_zip)
-    logger.info("downloaded to: {0}".format(dl_path))
+    proj_logger.info("downloaded to: {0}".format(dl_path))
 
-
-    # match packages
+    # match packages with downloaded artifact files
     pkg_data = repo_conf['packages']
     pkgs_match = {}
     error_count = 0
@@ -114,7 +115,7 @@ def process_request(data):
                 # we consider it as an error, if more than one matches found for
                 # a single glob
                 if len(glob_match)>1:
-                    logger.error("Multiple matches on distro: {0} version: {1}  glob: '{2}'".format(
+                    proj_logger.error("Multiple matches on distro: {0} version: {1}  glob: '{2}'".format(
                         distro,
                         version,
                         item
@@ -124,7 +125,7 @@ def process_request(data):
                     pkgs_match[distro][version].append(glob_match[0])
             # if nothing found just delete the matches-element
             if not pkgs_match[distro][version]:
-                logger.warning("No matches for distro: {0} version: {1}".format(
+                proj_logger.warning("No matches for distro: {0} version: {1}".format(
                     distro,
                     version,
                 ))
@@ -132,7 +133,7 @@ def process_request(data):
 
     # if any errors found, cancel
     if error_count>0:
-        logger.error("Found {0} errors, will not continue".format( error_count ))
+        proj_logger.error("Found {0} errors, will not continue".format( error_count ))
         shutil.rmtree(dl_path)
         return
 
@@ -140,7 +141,7 @@ def process_request(data):
     for distro in pkgs_match:
         for version in pkgs_match[distro]:
             for pkg in pkgs_match[distro][version]:
-                logger.info("ADDPKG - distro: {0} version: {1} package: {2}".format(
+                proj_logger.info("ADDPKG - distro: {0} version: {1} package: {2}".format(
                     distro,
                     version,
                     pkg
@@ -149,8 +150,7 @@ def process_request(data):
 
     # remove temporary dir
     shutil.rmtree(dl_path)
-
-    #logger.info("Download artifacts of project #{0} done".format(data['project_id']))
+    proj_logger.info("done adding packages")
     return
 
 
