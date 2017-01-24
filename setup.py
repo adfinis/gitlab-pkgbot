@@ -55,6 +55,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'gitlab-pkgbot = pkgbot:main',
+            'aptly-fifo-queue = pkgbot.FifoSocketQueue:main'
         ]
     },
     install_requires = [

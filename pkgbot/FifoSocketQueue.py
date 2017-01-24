@@ -176,7 +176,7 @@ class SocketFifoQueue(threading.Thread):
 def main():
 
     parser = argparse.ArgumentParser(
-                description="FIFO socket queue"
+                description="aptly fifo socket queue"
              )
     parser.add_argument(
                 "--socket",

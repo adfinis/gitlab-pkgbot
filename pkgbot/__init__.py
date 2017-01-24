@@ -296,7 +296,7 @@ def main():
     except IOError as e:
         print e
         sys.exit(1)
-    except (yaml.scanner.ScannerError, yaml.parser.ParserError):
+    except (yaml.scanner.ScannerError, yaml.parser.ParserError, IndexError):
         print("ERROR: Cannot load config, YAML parser error")
         sys.exit(1)
     try:
