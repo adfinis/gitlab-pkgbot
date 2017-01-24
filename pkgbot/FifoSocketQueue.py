@@ -18,7 +18,7 @@ from pprint import pprint
 
 FIFO_SOCKET="/home/eni/run/aptly-fifo.sock"
 UF_JOB_FILE="/home/eni/adsy/gitlab-pkgbot/pkgbot/job-save"
-FIFO_MAX_LEN=1024
+FIFO_MAX_LEN=2048
 
 
 # init logging
@@ -163,7 +163,9 @@ class SocketFifoQueue(threading.Thread):
                 data = os.read(self.fifo, FIFO_MAX_LEN)
                 if data:
                     d_clean = data.strip()
-                    self.add(d_clean)
+                    d_cmds  = data.strip().split("\n")
+                    for cmd in d_cmds:
+                        self.add(cmd)
                 time.sleep(0.1)
         except KeyboardInterrupt:
             self.exit()
