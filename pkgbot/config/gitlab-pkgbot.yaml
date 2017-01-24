@@ -1,5 +1,24 @@
 pkgbot:
-  port: 8083
+  port: 8084
+  base-package-path: /var/www/mirror/repo_packages
+  pyaptly-config-path: /etc/pyaptly
+  package-structure:
+    debian:
+      jessie: debian/jessie
+      wheezy: debian/wheezy
+    ubuntu:
+      trusty: ubuntu/trusty
+      vivid: ubuntu/vivid
+      xenial: ubuntu/xenial
+    rhel:
+      rhel6: redhat/6
+      rhel7: redhat/7
+    centos:
+      centos6: centos/6
+      centos7: centos/7
+  scripts:
+    update-rpm: /usr/local/bin/update_adsy_redhat.sh
+  aptly-fifo-queue: /var/run/aptly-fifo-queue/socket
 
 gitlab:
   url: https://gitlab.example.com
