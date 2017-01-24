@@ -17,6 +17,7 @@ import sys
 import zipfile
 import tempfile
 import shutil
+import stat
 from pprint import pprint
 import glob
 import urllib3
@@ -40,6 +41,10 @@ def get_logger( prefix="adsy-pkgbot", project=False ):
     return logger
 
 logger = get_logger()
+
+
+def write_to_fifo(fifo, message):
+    os.write(fifo, "{0}\n".format(message))
 
 
 
@@ -76,6 +81,22 @@ def process_request(data):
     except:
         proj_logger.error( "Config for repo not found or invalid")
         return
+
+    # check if we can write to aptly queue or fail
+    fifo_socket_location = conf['pkgbot']['aptly-fifo-queue']
+    has_sock = False
+    try:
+        has_sock = stat.S_ISFIFO(os.stat(fifo_socket_location).st_mode)
+    except OSError:
+        has_sock = False
+    if not os.access(fifo_socket_location, os.W_OK):
+        has_sock = False
+    if not has_sock:
+        proj_logger.error("Cannot connect to aptly-fifo-queue, socket: {0}".format(
+            fifo_socket_location
+        ))
+        return
+    fifo = os.open(fifo_socket_location, os.O_NONBLOCK | os.O_WRONLY)
 
     # check if wanted repo exists and fail if not
     incoming_pkg_dir = "{0}/{1}".format(
@@ -217,16 +238,18 @@ def process_request(data):
 
     # everything copied, run aptly/rpm-commands and done
     for repo, pkg_path in aptly_add:
-        print("aptly repo add {0} {1}".format(repo, pkg_path))
+        write_to_fifo(fifo, "echo aptly repo add {0} {1}".format(repo, pkg_path))
     if has_aptly:
-        print("pyaptly -c {0} snapshot create".format(pyaptly_repo_file))
-        print("pyaptly -c {0} snapshot update".format(pyaptly_repo_file))
+        write_to_fifo(fifo, "echo pyaptly -c {0} snapshot create".format(pyaptly_repo_file))
+        write_to_fifo(fifo, "echo pyaptly -c {0} snapshot update".format(pyaptly_repo_file))
     if has_rpm:
         print("run rpmscript")
 
 
     # remove temporary dir
     shutil.rmtree(dl_path)
+    # close fifo socket
+    os.close(fifo)
     proj_logger.info( "Done adding packages" )
     return
 
