@@ -5,6 +5,7 @@ After=network.target
 [Service]
 Type=simple
 User=mirror
+Group=mirror
 ExecStart=/usr/local/bin/gitlab-pkgbot /etc/gitlab-pkgbot.yaml
 
 [Install]
