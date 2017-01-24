@@ -5,6 +5,7 @@
 import os
 import sys
 import time
+import posix
 import Queue
 import signal
 import socket
@@ -195,7 +196,9 @@ def main():
     except OSError, e:
         logger.warn("Failed to create FIFO: {0}".format(e))
 
-    fifo = os.open(args.socket, os.O_NONBLOCK)
+    #fifo = os.open(args.socket, os.O_NONBLOCK)
+    fifo = posix.open(args.socket, posix.O_RDWR)
+
     queue_thread = SocketFifoQueue(fifo, args.save_file)
     queue_thread.start()
     queue_thread.start_sock()
