@@ -1,0 +1,10 @@
+[Unit]
+Description=adsy aptly fifo packet queue
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/aptly-fifo-packet-queue --socket=/var/run/aptly-fifo-queue/socket --save-file=/var/run/aptly-fifo-queue/jobs
+
+[Install]
+WantedBy=multi-user.target
