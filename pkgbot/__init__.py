@@ -72,11 +72,28 @@ def process_request(data):
         repo_conf      = rc['pkgbot']
         pkg_data       = repo_conf['packages']
         valid_branches = repo_conf['branches']
+        wanted_repo    = repo_conf['repo']
     except:
         proj_logger.error( "Config for repo not found or invalid")
         return
 
-    # branch is required in config
+    # check if wanted repo exists and fail if not
+    incoming_pkg_dir = "{0}/{1}".format(
+        conf['pkgbot']['base-package-path'],
+        wanted_repo
+    )
+    pyaptly_repo_file = "{0}/{1}.yml".format(
+        conf['pkgbot']['pyaptly-config-path'],
+        wanted_repo
+    )
+    if not os.path.isdir( incoming_pkg_dir ):
+        logger.error("Directory for repo '{0}' not found".format(incoming_pkg_dir))
+        return
+    if not os.path.isfile( pyaptly_repo_file ):
+        logger.error("Cannot locate pyaptly config '{0}'".format(pyaptly_repo_file))
+        return
+
+    # branch is also required in config
     if data['ref'] not in valid_branches:
         proj_logger.info( "Branch: {0} does not match any configured".format(
             data['ref']
@@ -98,6 +115,7 @@ def process_request(data):
             repo_conf['download-delay']
         ))
         time.sleep( repo_conf['download-delay'] )
+
 
     # now we are ready to fetch the build artifacts
     dl_path       = tempfile.mkdtemp()
@@ -153,20 +171,62 @@ def process_request(data):
         return
 
     # add packages to aptly/rpm
+    aptly_add = []
+    has_aptly = False
+    has_rpm   = False
+
+    # loop over found files
     for distro in pkgs_match:
+        # loop over distros
         for version in pkgs_match[distro]:
+            # loop over distro versions
             for pkg in pkgs_match[distro][version]:
+
+                # generate filenames
+                package_dir = "{0}/{1}".format(
+                    incoming_pkg_dir,
+                    conf['pkgbot']['package-structure'][distro][version]
+                )
+                pkg_file     = os.path.basename( pkg )
+                pkg_fullpath = "{0}/{1}".format( package_dir, pkg_file )
+                aptly_repo   = "{0}-{1}-{2}".format( wanted_repo, distro, version )
+
+                # if the pkg-file allready exists, do nothing
+                if os.path.isfile(pkg_fullpath):
+                    logger.warning("File {0} allready exists, skipping".format(
+                        pkg_file
+                    ))
+                    continue
+
                 proj_logger.info( "ADDPKG - distro: {0} version: {1} package: {2}".format(
                     distro,
                     version,
                     pkg
                 ))
 
+                # copy the file to incoming directory
+                shutil.copyfile(pkg, pkg_fullpath)
+
+                # store repo and file for aptly
+                if distro == 'rhel' or distro == 'centos':
+                    has_rpm = True
+                else:
+                    has_aptly = True
+                    aptly_add.append( [aptly_repo, pkg_fullpath] )
+
+
+    # everything copied, run aptly/rpm-commands and done
+    for repo, pkg_path in aptly_add:
+        print("aptly repo add {0} {1}".format(repo, pkg_path))
+    print("pyaptly -c {0} snapshot create".format(pyaptly_repo_file))
+    print("pyaptly -c {0} snapshot update".format(pyaptly_repo_file))
+
 
     # remove temporary dir
     shutil.rmtree(dl_path)
     proj_logger.info( "Done adding packages" )
     return
+
 
 
 class RequestHandler(BaseHTTPRequestHandler):
