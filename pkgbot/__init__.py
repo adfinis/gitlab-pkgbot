@@ -193,7 +193,7 @@ def process_request(data):
 
                 # if the pkg-file allready exists, do nothing
                 if os.path.isfile(pkg_fullpath):
-                    logger.warning("File {0} allready exists, skipping".format(
+                    proj_logger.warning("File {0} allready exists, skipping".format(
                         pkg_file
                     ))
                     continue
@@ -218,8 +218,11 @@ def process_request(data):
     # everything copied, run aptly/rpm-commands and done
     for repo, pkg_path in aptly_add:
         print("aptly repo add {0} {1}".format(repo, pkg_path))
-    print("pyaptly -c {0} snapshot create".format(pyaptly_repo_file))
-    print("pyaptly -c {0} snapshot update".format(pyaptly_repo_file))
+    if has_aptly:
+        print("pyaptly -c {0} snapshot create".format(pyaptly_repo_file))
+        print("pyaptly -c {0} snapshot update".format(pyaptly_repo_file))
+    if has_rpm:
+        print("run rpmscript")
 
 
     # remove temporary dir
