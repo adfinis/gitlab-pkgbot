@@ -254,10 +254,13 @@ def process_request(data):
 
     # everything copied, run aptly/rpm-commands and done
     for repo, pkg_path in aptly_add:
-        os.write(fifo, "echo aptly repo add {0} {1}\n".format(repo, pkg_path))
+        os.write(fifo, "aptly repo add {0} {1}\n".format(repo, pkg_path))
     if has_aptly:
-        os.write(fifo, "echo pyaptly -c {0} snapshot create\n".format(pyaptly_repo_file))
-        os.write(fifo, "echo pyaptly -c {0} snapshot update\n".format(pyaptly_repo_file))
+        os.write(fifo, "pyaptly -c {0} snapshot create\n".format(pyaptly_repo_file))
+        os.write(fifo, "pyaptly -c {0} snapshot update\n".format(pyaptly_repo_file))
+        os.write(fifo, "pyaptly -c {0} publish create\n".format(pyaptly_repo_file))
+        os.write(fifo, "pyaptly -c {0} publish update\n".format(pyaptly_repo_file))
+
     if has_rpm:
         print("run rpmscript")
 
