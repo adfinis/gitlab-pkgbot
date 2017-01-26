@@ -15,6 +15,7 @@ else:
     pass
 
 
+
 def find_data(packages, extensions):
     """Finds data files along with source.
 
@@ -42,20 +43,23 @@ def find_data(packages, extensions):
 #    README_TEXT = f.read()
 
 setup(
-    name = "gitlab-autodocs",
-    version = "0.0.1.2",
+    name = "gitlab-pkgbot",
+    version = "0.0.0.1",
     packages = find_packages(),
     package_data=find_data(
         find_packages(), ["py"]
     ),
     data_files = [
         ('/etc', ['pkgbot/config/gitlab-pkgbot.yaml']),
-        ('/lib/systemd/system', ['pkgbot/config/gitlab-pkgbot.service'])
+        ('/lib/systemd/system', [
+            'pkgbot/config/gitlab-pkgbot.service',
+            'pkgbot/config/aptly-spooler.service'
+        ])
     ],
     entry_points = {
         'console_scripts': [
             'gitlab-pkgbot = pkgbot:main',
-            'aptly-fifo-queue = pkgbot.FifoSocketQueue:main'
+            'aptly-spooler = pkgbot.aptlyspooler:main'
         ]
     },
     install_requires = [

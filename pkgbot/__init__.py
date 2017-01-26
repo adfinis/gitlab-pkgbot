@@ -24,7 +24,7 @@ import urllib3
 
 from distutils.dir_util import copy_tree
 from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
-from GitlabArtifacts import GitlabArtifactsDownloader
+from gitlab import GitlabArtifactsDownloader
 
 
 # init logging

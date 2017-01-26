@@ -1,0 +1,12 @@
+[Unit]
+Description=adsy aptly fifo packet queue
+After=network.target
+
+[Service]
+Type=simple
+User=mirror
+Group=mirror
+ExecStart=/usr/local/bin/aptly-spooler --socket=/var/run/aptly-spooler/fifo.sock --save-file=/var/run/aptly-spooler/jobs
+
+[Install]
+WantedBy=multi-user.target
