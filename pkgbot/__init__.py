@@ -24,7 +24,7 @@ import urllib3
 
 from distutils.dir_util import copy_tree
 from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
-from gitlab import GitlabArtifactsDownloader
+from GitlabHelper import GitlabArtifactsDownloader
 
 
 # init logging
@@ -43,9 +43,6 @@ def get_logger( prefix="adsy-pkgbot", project=False ):
 logger = get_logger()
 
 
-def write_to_fifo(fifo, message):
-    os.write(fifo, "{0}\n".format(message))
-
 
 
 def process_request(data):
@@ -55,8 +52,7 @@ def process_request(data):
 
     global conf
     repo = "/".join( data['repository']['homepage'].split("/")[3:] )
-    proj_logger = get_logger(project=repo)
-    proj_logger.info( "Process build trigger" )
+    logger.info( "{0} - Process build trigger".format(repo) )
     requests.packages.urllib3.disable_warnings()
 
     git = GitlabArtifactsDownloader(
@@ -79,7 +75,7 @@ def process_request(data):
         valid_branches = repo_conf['branches']
         wanted_repo    = repo_conf['repo']
     except:
-        proj_logger.error( "Config for repo not found or invalid")
+        logger.error( "{0} - Config for repo not found or invalid".format(repo))
         return
 
     # check if we can write to aptly queue or fail
@@ -92,7 +88,8 @@ def process_request(data):
     if not os.access(fifo_socket_location, os.W_OK):
         has_sock = False
     if not has_sock:
-        proj_logger.error("Cannot connect to aptly-fifo-queue, socket: {0}".format(
+        logger.error("{0} - Cannot connect to aptly-spooler, socket: {1}".format(
+            repo,
             fifo_socket_location
         ))
         return
@@ -108,15 +105,22 @@ def process_request(data):
         wanted_repo
     )
     if not os.path.isdir( incoming_pkg_dir ):
-        logger.error("Directory for repo '{0}' not found".format(incoming_pkg_dir))
+        logger.error("{0} - Directory for repo '{1}' not found".format(
+            repo,
+            incoming_pkg_dir
+        ))
         return
     if not os.path.isfile( pyaptly_repo_file ):
-        logger.error("Cannot locate pyaptly config '{0}'".format(pyaptly_repo_file))
+        logger.error("{0} - Cannot locate pyaptly config '{1}'".format(
+            repo,
+            pyaptly_repo_file
+        ))
         return
 
     # branch is also required in config
     if data['ref'] not in valid_branches:
-        proj_logger.info( "Branch: {0} does not match any configured".format(
+        logger.info( "{0} - Branch: {1} does not match any configured".format(
+            repo,
             data['ref']
         ))
         return
@@ -124,7 +128,8 @@ def process_request(data):
     # stages are optional
     if 'stages' in repo_conf:
         if data['build_stage'] not in repo_conf['stages']:
-            proj_logger.info( "Build stage {0} does not match any configured".format(
+            logger.info( "{0} - Build stage {1} does not match any configured".format(
+                repo,
                 data['build_stage']
             ))
             return
@@ -132,7 +137,8 @@ def process_request(data):
     # gitlab ci will trigger an build done event and then start to upload the artifacts.
     # users can configure an delay before downloading artifacts
     if 'download-delay' in repo_conf:
-        proj_logger.info( "Config has delay in it, sleep for {0} secs".format(
+        logger.info( "{0} - Config has delay in it, sleep for {1} secs".format(
+            repo,
             repo_conf['download-delay']
         ))
         time.sleep( repo_conf['download-delay'] )
@@ -147,7 +153,10 @@ def process_request(data):
     git.download_last_artifacts( artifacts_zip )
     git.unzip( artifacts_zip, dl_path )
     os.remove( artifacts_zip )
-    proj_logger.info( "Downloaded to: {0}".format( dl_path ) )
+    logger.info( "{0} - Downloaded to: {1}".format(
+        repo,
+        dl_path
+    ))
 
     # match packages with downloaded artifact files
     pkg_data = repo_conf['packages']
@@ -169,7 +178,8 @@ def process_request(data):
                 # we consider it as an error, if more than one matches found for
                 # a single glob
                 if len(glob_match)>1:
-                    proj_logger.error( "Multiple matches on distro: {0} version: {1}  glob: '{2}'".format(
+                    logger.error( "{0} - Multiple matches on distro: {1} version: {2}  glob: '{3}'".format(
+                        repo,
                         distro,
                         version,
                         item
@@ -179,7 +189,8 @@ def process_request(data):
                     pkgs_match[distro][version].append(glob_match[0])
             # if nothing found just delete the matches-element
             if not pkgs_match[distro][version]:
-                proj_logger.warning( "No matches for distro: {0} version: {1}".format(
+                logger.warning( "{0} - No matches for distro: {1} version: {2}".format(
+                    repo,
                     distro,
                     version,
                 ))
@@ -187,7 +198,10 @@ def process_request(data):
 
     # if any errors found, cancel
     if error_count>0:
-        proj_logger.error( "Found {0} errors, will not continue".format( error_count ))
+        logger.error( "{0} - Found {1} errors, will not continue".format(
+            repo,
+            error_count
+        ))
         shutil.rmtree(dl_path)
         return
 
@@ -214,12 +228,14 @@ def process_request(data):
 
                 # if the pkg-file allready exists, do nothing
                 if os.path.isfile(pkg_fullpath):
-                    proj_logger.warning("File {0} allready exists, skipping".format(
+                    logger.warning("{0} - File {1} allready exists, skipping".format(
+                        repo,
                         pkg_file
                     ))
                     continue
 
-                proj_logger.info( "ADDPKG - distro: {0} version: {1} package: {2}".format(
+                logger.info( "{0} - ADDPKG - distro: {1} version: {2} package: {3}".format(
+                    repo,
                     distro,
                     version,
                     pkg
@@ -238,10 +254,10 @@ def process_request(data):
 
     # everything copied, run aptly/rpm-commands and done
     for repo, pkg_path in aptly_add:
-        write_to_fifo(fifo, "echo aptly repo add {0} {1}".format(repo, pkg_path))
+        os.write(fifo, "echo aptly repo add {0} {1}\n".format(repo, pkg_path))
     if has_aptly:
-        write_to_fifo(fifo, "echo pyaptly -c {0} snapshot create".format(pyaptly_repo_file))
-        write_to_fifo(fifo, "echo pyaptly -c {0} snapshot update".format(pyaptly_repo_file))
+        os.write(fifo, "echo pyaptly -c {0} snapshot create\n".format(pyaptly_repo_file))
+        os.write(fifo, "echo pyaptly -c {0} snapshot update\n".format(pyaptly_repo_file))
     if has_rpm:
         print("run rpmscript")
 
@@ -250,7 +266,7 @@ def process_request(data):
     shutil.rmtree(dl_path)
     # close fifo socket
     os.close(fifo)
-    proj_logger.info( "Done adding packages" )
+    logger.info( "{0} - Done adding packages".format(repo) )
     return
 
 
@@ -275,8 +291,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         data = json.loads(data_string)
         try:
              if (data['object_kind'] == "build" and data['build_status']=='success'):
-                 thread = threading.Thread( target=process_request, args=[data] )
-                 thread.start()
+                 threading.Thread( target=process_request, args=[data] ).start()
         except:
             pass
         self.send_headers()
