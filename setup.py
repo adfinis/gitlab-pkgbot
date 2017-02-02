@@ -47,15 +47,15 @@ setup(
     version = "0.0.0.1",
     packages = find_packages(),
     package_data=find_data(
-        find_packages(), ["py"]
+        find_packages(), ["py", "yaml", "service"]
     ),
-    data_files = [
-        ('/etc', ['pkgbot/config/gitlab-pkgbot.yaml']),
-        ('/lib/systemd/system', [
-            'pkgbot/config/gitlab-pkgbot.service',
-            'pkgbot/config/aptly-spooler.service'
-        ])
-    ],
+    # data_files = [
+    #     ('/etc', ['pkgbot/config/gitlab-pkgbot.yaml']),
+    #     ('/lib/systemd/system', [
+    #         'pkgbot/config/gitlab-pkgbot.service',
+    #         'pkgbot/config/aptly-spooler.service'
+    #     ])
+    # ],
     entry_points = {
         'console_scripts': [
             'gitlab-pkgbot = pkgbot:main',
