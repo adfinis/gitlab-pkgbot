@@ -1,0 +1,11 @@
+stages:
+  - package
+
+package:
+  stage: package
+  script:
+  - make all-pkg
+  artifacts:
+    untracked: true
+    paths:
+      - dist/*

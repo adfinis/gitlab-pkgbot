@@ -1,4 +1,4 @@
-all: deb rpm deb-python-gitlab rpm-python-gitlab deb-collect rpm-collect
+all-pkg: deb rpm deb-python-gitlab rpm-python-gitlab deb-collect rpm-collect
 
 deb:
 	python setup.py --command-packages=stdeb.command bdist_deb
