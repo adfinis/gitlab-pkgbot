@@ -6,7 +6,7 @@ package:
   script:
   - ls -lah
   - pwd
-  - make all-pkg
+  - python setup.py --command-packages=stdeb.command bdist_deb
   artifacts:
     untracked: true
     paths:
