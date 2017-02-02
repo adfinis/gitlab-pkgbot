@@ -4,6 +4,8 @@ stages:
 package:
   stage: package
   script:
+  - ls -lah
+  - pwd
   - make all-pkg
   artifacts:
     untracked: true
