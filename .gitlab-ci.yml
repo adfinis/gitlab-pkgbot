@@ -4,10 +4,8 @@ stages:
 package:
   stage: package
   script:
-  - ls -lah
-  - pwd
-  - python setup.py --command-packages=stdeb.command bdist_deb
+  - make all-pkg
   artifacts:
-    untracked: true
+    untracked: false
     paths:
       - dist/*
