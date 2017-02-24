@@ -1,0 +1,11 @@
+pkgbot:
+  download-delay: 5
+  repo: adsy-testing
+  branches:
+    - master
+    - production
+  packages:
+    rhel:
+      rhel7:
+        - dist/gitlab-pkgbot-*.noarch.rpm
+        - dist/python-gitlab-*.noarch.rpm
