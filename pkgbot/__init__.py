@@ -310,6 +310,7 @@ def process_request(data):
             # sign repodata
             sign_repodata_cmd = [
                 "gpg",
+                "--yes",
                 "--detach-sign",
                 "--armor",
                 "{0}/repodata/repomd.xml".format(
