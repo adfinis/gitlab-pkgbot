@@ -21,6 +21,7 @@ import stat
 from pprint import pprint
 import glob
 import urllib3
+import subprocess
 
 from distutils.dir_util import copy_tree
 from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
@@ -207,6 +208,7 @@ def process_request(data):
 
     # add packages to aptly/rpm
     aptly_add = []
+    rpm_add = []
     has_aptly = False
     has_rpm   = False
 
@@ -244,15 +246,16 @@ def process_request(data):
                 # copy the file to incoming directory
                 shutil.copyfile(pkg, pkg_fullpath)
 
-                # store repo and file for aptly
+                # store repo and file for aptly/createrepo
                 if distro == 'rhel' or distro == 'centos':
                     has_rpm = True
+                    rpm_add.append( [pkg_fullpath, wanted_repo, distro, version] )
                 else:
                     has_aptly = True
                     aptly_add.append( [aptly_repo, pkg_fullpath] )
 
 
-    # everything copied, run aptly/rpm-commands and done
+    # everything copied, run aptly-commands
     for repo, pkg_path in aptly_add:
         os.write(fifo, "aptly repo add {0} {1}\n".format(repo, pkg_path))
     if has_aptly:
@@ -261,8 +264,60 @@ def process_request(data):
         os.write(fifo, "pyaptly -c {0} publish create\n".format(pyaptly_repo_file))
         os.write(fifo, "pyaptly -c {0} publish update\n".format(pyaptly_repo_file))
 
+
+    #  if rpm files found, do nescesary stuff to add them
     if has_rpm:
-        print("run rpmscript")
+        createrepo_distros = []
+        for pkg_fullpath, repo, distro, version in rpm_add:
+            # generate path
+            pkg_basename = os.path.basename(pkg_fullpath)
+            copy_to = "{0}/{1}/{2}/{3}".format(
+                conf['pkgbot']['public-root'],
+                repo,
+                conf['pkgbot']['package-structure'][distro][version],
+                pkg_basename
+            )
+
+            # copy file to final location
+            shutil.copyfile(pkg_fullpath, copy_to)
+
+            # sign rpm
+            rpmsign_cmd = [
+                conf['pkgbot']['scripts']['rpm-sign'],
+                copy_to
+            ]
+            subprocess.check_call(rpmsign_cmd)
+            createrepo_distros.append(
+                conf['pkgbot']['package-structure'][distro][version]
+            )
+
+        # now all rpm packages are signed and at the correct location
+        # run createrepo and sign repodata
+        createrepo_distros = list(set(createrepo_distros))
+        for distro in createrepo_distros:
+            rpm_repo_path = "{0}/{1}/{2}".format(
+                conf['pkgbot']['public-root'],
+                wanted_repo,
+                distro
+            )
+            # createrepo
+            createrepo_cmd = [
+                "createrepo",
+                rpm_repo_path
+            ]
+            subprocess.check_call(createrepo_cmd)
+
+            # sign repodata
+            sign_repodata_cmd = [
+                "gpg",
+                "--detach-sign",
+                "--armor",
+                "{0}/repodata/repomd.xml".format(
+                    rpm_repo_path
+                )
+            ]
+            subprocess.check_call(sign_repodata_cmd)
+
 
 
     # remove temporary dir

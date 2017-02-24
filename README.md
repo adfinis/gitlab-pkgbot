@@ -48,3 +48,9 @@ The spooler runs as systemd service, logs can be viewed via the following comman
 ```
 systemctl status aptly-spooler.service
 ```
+
+
+## mkdir
+```
+mkdir -p centos/{6,7} redhat/{6,7} debian/{jessie,wheezy} ubuntu/{trusty,vivid,xenial}mkdir -p centos/{6,7} rhel/{6,7} debian/{jessie,wheezy} ubuntu/{trusty,vivid,xenial}
+```

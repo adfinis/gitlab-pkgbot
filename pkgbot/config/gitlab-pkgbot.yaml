@@ -1,6 +1,7 @@
 pkgbot:
   port: 8084
   base-package-path: /var/www/mirror/repo_packages
+  public-root: /var/www/mirror/.aptly/public
   pyaptly-config-path: /etc/pyaptly
   package-structure:
     debian:
@@ -17,7 +18,7 @@ pkgbot:
       centos6: centos/6
       centos7: centos/7
   scripts:
-    update-rpm: /usr/local/bin/update_adsy_redhat.sh %repo%
+    rpm-sign: /usr/local/bin/rpmsign-nointeractive.sh
   aptly-fifo-queue: /var/run/aptly-spooler/fifo.sock
 
 gitlab:
