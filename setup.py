@@ -54,7 +54,8 @@ setup(
          ('/lib/systemd/system', [
              'pkgbot/config/gitlab-pkgbot.service',
              'pkgbot/config/aptly-spooler.service'
-         ])
+         ]),
+         ('/usr/local/bin', ['pkgbot/scripts/rpmsign-nointeractive.sh'])
     ],
     entry_points = {
         'console_scripts': [
@@ -64,7 +65,7 @@ setup(
     },
     install_requires = [
         "requests",
-        "pyyaml",
+        #"pyyaml",
         "python-gitlab"
     ],
     author = "Adfinis-SyGroup AG",

@@ -1,28 +1,24 @@
-all-pkg: deb rpm deb-python-gitlab rpm-python-gitlab deb-collect rpm-collect
+DIST_DIR=dist
+RPM_PYTHON_LIB_PATH=/usr/lib/python2.7/site-packages
 
-deb:
-	python setup.py --command-packages=stdeb.command bdist_deb
+all-pkg: deb rpm deb-python-gitlab rpm-python-gitlab
 
-deb-clean:
-	rm deb_dist/*
-	rm dist/*
-	rm gitlab-pkgbot-*.tar.gz
+$(DIST_DIR):
+	mkdir -p $(DIST_DIR)
 
-deb-python-gitlab:
-	git clone https://github.com/gpocentek/python-gitlab
-	cd python-gitlab && python setup.py --command-packages=stdeb.command sdist_dsc --package python-gitlab
-	cd python-gitlab/deb_dist/python-gitlab-* && dpkg-buildpackage -rfakeroot -uc -us
+clean:
+	rm $(DIST_DIR)/*
 
-deb-collect:
-	mkdir -p dist/
-	cp deb_dist/python-gitlab-pkgbot*deb dist
-	cp python-gitlab/deb_dist/python-gitlab*.deb dist
+deb: $(DIST_DIR)
+	fpm -s python -t deb -d expect -d python-yaml --after-install pkgbot/scripts/pkg-mkdirs.sh setup.py
+	mv python-gitlab-pkgbot_*_all.deb $(DIST_DIR)
 
-rpm:
-	python setup.py bdist --formats=rpm
+deb-python-gitlab: $(DIST_DIR)
+	cd $(DIST_DIR) && fpm -s python -t deb python-gitlab
 
-rpm-python-gitlab:
-	cd python-gitlab && python setup.py bdist --formats=rpm
+rpm: $(DIST_DIR)
+	fpm -s python -t rpm -d expect -d PyYAML -d python-setuptools --after-install pkgbot/scripts/pkg-mkdirs.sh --python-install-lib $(RPM_PYTHON_LIB_PATH) setup.py
+	mv python-gitlab-pkgbot-*.noarch.rpm $(DIST_DIR)
 
-rpm-collect:
-	cp python-gitlab/dist/python-gitlab-*.rpm dist
+rpm-python-gitlab: $(DIST_DIR)
+	cd $(DIST_DIR) && fpm -s python -t rpm -d python-setuptools --python-install-lib $(RPM_PYTHON_LIB_PATH) python-gitlab
