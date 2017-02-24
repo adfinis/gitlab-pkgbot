@@ -7,8 +7,12 @@ pkgbot:
   packages:
     rhel:
       rhel7:
-        - dist/gitlab-pkgbot-*.noarch.rpm
-        - dist/python-gitlab-*.noarch.rpm
+        - dist/python-gitlab-0*.noarch.rpm
+        - dist/python-gitlab-pkgbot-*.noarch.rpm
+    centos:
+      centos7:
+        - dist/python-gitlab-0*.noarch.rpm
+        - dist/python-gitlab-pkgbot-*.noarch.rpm
     debian:
       jessie:
         - dist/python-gitlab_*_all.deb
