@@ -2,6 +2,7 @@ pkgbot:
   - repo: adsy-testing
     download-delay: 5
     branches:
+      - master
       - testing
     packages:
       centos:
