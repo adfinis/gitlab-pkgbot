@@ -1,19 +1,12 @@
 pkgbot:
-  download-delay: 5
-  repo: adsy-testing
-  branches:
-    - master
-    - production
-  packages:
-    rhel:
-      rhel7:
-        - dist/python-gitlab-0*.noarch.rpm
-        - dist/python-gitlab-pkgbot-*.noarch.rpm
-    centos:
-      centos7:
-        - dist/python-gitlab-0*.noarch.rpm
-        - dist/python-gitlab-pkgbot-*.noarch.rpm
-    debian:
-      jessie:
-        - dist/python-gitlab_*_all.deb
-        - dist/python-gitlab-pkgbot_*_all.deb
+  - repo: adsy-testing
+    download-delay: 5
+    branches:
+      - testing
+    packages:
+      centos:
+        centos7:
+          - dist/python-gitlab-pkgbot-*.noarch.rpm
+      debian:
+        jessie:
+          - dist/python-gitlab-pkgbot_*_all.deb
