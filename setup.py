@@ -44,7 +44,7 @@ def find_data(packages, extensions):
 
 setup(
     name = "gitlab-pkgbot",
-    version = "0.0.0.2",
+    version = "0.0.0.3",
     packages = find_packages(),
     package_data=find_data(
         find_packages(), ["py", "yaml", "service"]
