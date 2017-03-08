@@ -72,12 +72,67 @@ def process_request(data):
         repo_conf_dl   = git.download_raw_file(config_file)
         rc             = yaml.load(repo_conf_dl.text)
         repo_conf      = rc['pkgbot']
-        pkg_data       = repo_conf['packages']
-        valid_branches = repo_conf['branches']
-        wanted_repo    = repo_conf['repo']
     except:
         logger.error( "{0} - Config for repo not found or invalid".format(repo))
         return
+
+    # .pkg-bot.yml is dict-type
+    if isinstance(repo_conf, dict):
+        try:
+            pkg_data       = repo_conf['packages']
+            valid_branches = repo_conf['branches']
+            wanted_repo    = repo_conf['repo']
+        except:
+            logger.error( "{0} - Config for repo not found or invalid".format(repo))
+            return
+
+    # .pkg-bot.yml is list-type, find actual block
+    elif isinstance(repo_conf, list):
+        block_match = {}
+        branches = []
+        has_duplicate = False
+        duplicate_branch_name = ""
+        # search for duplicates
+        for block in repo_conf:
+            if 'branches' not in block:
+                continue
+            for branch in block['branches']:
+                if data['ref'] == branch:
+                    block_match = block
+                if branch in branches:
+                    has_duplicate = True
+                    duplicate_branch_name = branch
+                branches.append(branch)
+
+        if not block_match:
+            logger.error( "{0} - No block in .pkg-bot.yml matches to branch '{1}'".format(
+                repo,
+                data['ref']
+            ))
+            return
+
+        if has_duplicate:
+            logger.error( "{0} - Multiple matches for branch: {1} found".format(
+                repo,
+                duplicate_branch_name
+            ))
+            return
+
+        repo_conf = block_match
+        try:
+            pkg_data       = repo_conf['packages']
+            valid_branches = repo_conf['branches']
+            wanted_repo    = repo_conf['repo']
+        except:
+            logger.error( "{0} - Config for repo not found or invalid".format(repo))
+            return
+
+
+    # unknown .pkgbot.yml
+    else:
+        logger.error( "{0} - Cannot parse .pkg-bot.yml".format(repo))
+        return
+
 
     # check if we can write to aptly queue or fail
     fifo_socket_location = conf['pkgbot']['aptly-fifo-queue']
@@ -206,6 +261,7 @@ def process_request(data):
         shutil.rmtree(dl_path)
         return
 
+
     # add packages to aptly/rpm
     aptly_add = []
     rpm_add = []
@@ -318,7 +374,6 @@ def process_request(data):
                 )
             ]
             subprocess.check_call(sign_repodata_cmd)
-
 
 
     # remove temporary dir
