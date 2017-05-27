@@ -9,7 +9,7 @@ packages and puts them in aptly and RPM repos.
 # pip install python-gitlab
 ``` 
 
-Clonse this repository and switch into the directory:
+Clone this repository and switch into the directory:
 ```
 # python setup.py install
 # mkdir /var/run/aptly-spooler
