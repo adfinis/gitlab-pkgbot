@@ -26,7 +26,7 @@ The main config file for the bot is located at `/etc/gitlab-pkgbot.yaml`.
 
 It runs as a systemd service. You can view logs with the following command:
 ```
-# systemctl status gitlab-pkgbot.service
+# journalctl -u gitlab-pkgbot.service
 ```
 
 ## aptly-spooler
@@ -46,7 +46,7 @@ You can manually pipe commands into this spooler as well:
 
 It runs as a systemd service. You can view logs with the following command:
 ```
-# systemctl status aptly-spooler.service
+# journalctl -u aptly-spooler.service
 ```
 
 ## Mirror preparation
