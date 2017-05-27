@@ -1,56 +1,73 @@
-# GitLab package bot
+# GitLab Package Bot
 
-"The package bot" An simple service which receives HTTP build triggers from gitlab, gets the builded packages and puts them in aptly.
+A simple service which receives HTTP build triggers from GitLab, gets the built
+packages and puts them in aptly and RPM repos.
 
-
-## Manual Installation
+## Installation
 ```
-apt-get install python-yaml python-pip
-pip install python-gitlab
+# apt-get install python-yaml python-pip
+# pip install python-gitlab
+``` 
 
-git clone git@git.adfinis-sygroup.ch:ad-sy/gitlab-ci-pkg-bot.src.git
-cd gitlab-ci-pkg-bot.src
-python setup.py install
-mkdir /var/run/aptly-spooler
-chown mirror:mirror /var/run/aptly-spooler
-
+Clonse this repository and switch into the directory:
+```
+# python setup.py install
+# mkdir /var/run/aptly-spooler
+# chown mirror:mirror /var/run/aptly-spooler
 ```
 
 ## Configuration & Administration
 
 ### Configuration
 
-Them main config file for PKGBOT is located at `/etc/gitlab-pkgbot.yaml`
+The main config file for the bot is located at `/etc/gitlab-pkgbot.yaml`.
 
 ### Administration
 
-PKGBOT runs as systemd service. Its logs can be viewed with the following command:
+It runs as a systemd service. You can view logs with the following command:
 ```
-systemctl status gitlab-pkgbot.service
+# systemctl status gitlab-pkgbot.service
 ```
-
-
 
 ## aptly-spooler
 
-Since aptly can only run a command at once, this script sets up an simple
+Since aptly can only run one command at once, this script sets up a simple
 "spooler" for running all aptly commands.
-This is implemented via an FIFO-Socket located at `/var/run/aptly-spooler/fifo.sock`. This socket accepts commands seperated by newlines and executes them one by one.
+This is implemented via a FIFO-Socket located at 
+`/var/run/aptly-spooler/fifo.sock`. The socket accepts commands seperated by 
+newlines and executes them one by one.
 
-You can manually pipe commands in this spooler as well:
+You can manually pipe commands into this spooler as well:
 
 ```
-echo "sleep 10" > /var/run/aptly-spooler/fifo.sock
-echo "ps fuax" > /var/run/aptly-spooler/fifo.sock
-```
-
-The spooler runs as systemd service, logs can be viewed via the following command:
-```
-systemctl status aptly-spooler.service
+# echo "sleep 10" > /var/run/aptly-spooler/fifo.sock
+# echo "ps -efH" > /var/run/aptly-spooler/fifo.sock
 ```
 
+It runs as a systemd service. You can view logs with the following command:
+```
+# systemctl status aptly-spooler.service
+```
 
-## mkdir
+## Mirror preparation
+
+The bot copies the extracted packages into a specific directory tree before
+adding them to the specific repositories. Meaning the required directories have
+to be created first:
 ```
-mkdir -p centos/{6,7} redhat/{6,7} debian/{jessie,wheezy} ubuntu/{trusty,vivid,xenial}mkdir -p centos/{6,7} rhel/{6,7} debian/{jessie,wheezy} ubuntu/{trusty,vivid,xenial}
+# cd /path/to/your/mirror/dir
+# mkdir -p centos/{6,7} redhat/{6,7} debian/{jessie,wheezy} \
+  ubuntu/{trusty,vivid,xenial}mkdir -p centos/{6,7} rhel/{6,7}
+# chown -R mirror:mirror /path/to/your/mirror/dir
 ```
+
+## Contributions
+
+Contributions are more than welcome! Please feel free to open new issues or
+pull requests.
+
+## License
+
+GNU GENERAL PUBLIC LICENSE Version 3
+
+See the [LICENSE](LICENSE) file.
