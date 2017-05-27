@@ -1,5 +1,9 @@
 DIST_DIR=dist
 RPM_PYTHON_LIB_PATH=/usr/lib/python2.7/site-packages
+PROJECT := pkgbot
+GIT_HUB := https://github.com/adfinis-sygroup/gitlab-pkgbot
+
+include pyproject/Makefile
 
 all-pkg: deb rpm deb-python-gitlab rpm-python-gitlab
 

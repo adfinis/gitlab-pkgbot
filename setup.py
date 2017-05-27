@@ -4,7 +4,7 @@
 
 from setuptools import setup
 from setuptools import find_packages
-from setuptools.command.install import install
+import codecs
 import sys
 import os
 
@@ -14,6 +14,12 @@ if version > 2:
 else:
     pass
 
+
+__version__  = None
+version_file = "pkgbot/version.py"
+with codecs.open(version_file, encoding="UTF-8") as f:
+    code = compile(f.read(), version_file, 'exec')
+    exec(code)
 
 
 def find_data(packages, extensions):
@@ -39,23 +45,25 @@ def find_data(packages, extensions):
                         data[package].append(file_path)
     return data
 
-#with open('README.rst', 'r') as f:
-#    README_TEXT = f.read()
+
+with codecs.open('README.md', 'r', encoding="UTF-8") as f:
+    README_TEXT = f.read()
+
 
 setup(
     name = "gitlab-pkgbot",
-    version = "0.0.0.3",
+    version = __version__,
     packages = find_packages(),
     package_data=find_data(
         find_packages(), ["py", "yaml", "service"]
     ),
     data_files = [
-         ('/etc', ['pkgbot/config/gitlab-pkgbot.yaml']),
-         ('/lib/systemd/system', [
-             'pkgbot/config/gitlab-pkgbot.service',
-             'pkgbot/config/aptly-spooler.service'
-         ]),
-         ('/usr/local/bin', ['pkgbot/scripts/rpmsign-nointeractive.sh'])
+        ('/etc', ['pkgbot/config/gitlab-pkgbot.yaml']),
+        ('/lib/systemd/system', [
+            'pkgbot/config/gitlab-pkgbot.service',
+            'pkgbot/config/aptly-spooler.service'
+        ]),
+        ('/usr/local/bin', ['pkgbot/scripts/rpmsign-nointeractive.sh'])
     ],
     entry_points = {
         'console_scripts': [
@@ -65,24 +73,24 @@ setup(
     },
     install_requires = [
         "requests",
-        #"pyyaml",
+        # "pyyaml",
         "python-gitlab"
     ],
-    author = "Adfinis-SyGroup AG",
+    author = "Adfinis SyGroup AG",
     author_email = "https://adfinis-sygroup.ch/",
-    description = "Gitlab automated package sync",
-    long_description = "tbd",
-    keywords = "GitLab CI pkgbot",
-    url = "https://adfinis-sygroup.ch/",
+    description = "GitLab CI Package Bot",
+    long_description = README_TEXT,
+    keywords = "GitLab CI pkgbot bot",
+    url = "https://github.com/adfinis-sygroup/gitlab-pkgbot",
     classifiers = [
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "Intended Audience :: Information Technology",
-        "License :: OSI Approved :: "
-        "GNU Affero General Public License v3",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Natural Language :: English",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 2.6",
+        "Topic :: Software Development :: Build Tools"
     ]
 )
