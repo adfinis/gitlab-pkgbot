@@ -2,12 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-import os
-import sys
 import gitlab
 import zipfile
 import requests
-from distutils.dir_util import copy_tree
 
 
 class GitlabArtifactsDownloader:
@@ -22,23 +19,20 @@ class GitlabArtifactsDownloader:
         self.git = gitlab.Gitlab(
             gitlab_url,
             gitlab_token
-            #ssl_verify=False
+            # ssl_verify=False
         )
-
 
     def select_project_search(self, project_name):
         project = self.git.projects.search(project_name)
-        if len(project)<1:
+        if len(project) < 1:
             self.project = False
             return False
         else:
             self.project = project[0]
             return True
 
-
     def select_project(self, project_id):
         self.project = self.git.projects.get(project_id)
-
 
     def download_last_artifacts(self, local_filename):
         if self.project:
@@ -59,7 +53,6 @@ class GitlabArtifactsDownloader:
             self.git._url = git_urlsave
             self.save_download(dl, local_filename)
 
-
     def save_download(self, dl, local_filename):
         f = open(local_filename, 'wb')
         # loop over all chunks and append them to file
@@ -70,14 +63,12 @@ class GitlabArtifactsDownloader:
         f.close()
         return
 
-
     def unzip(self, filename, extract_to):
         try:
             with zipfile.ZipFile(filename, "r") as z:
                 z.extractall(extract_to)
         except:
             pass
-
 
     def download_raw_file(self, path):
         git_urlsave = self.git._url
