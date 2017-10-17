@@ -16,7 +16,7 @@ import subprocess
 
 FIFO_SOCKET = "/var/run/aptly-spooler/fifo.sock"
 UF_JOB_FILE = "/var/run/aptly-spooler/jobs"
-FIFO_MAX_LEN = 2048
+FIFO_MAX_LEN = 10048
 
 
 # init logging
