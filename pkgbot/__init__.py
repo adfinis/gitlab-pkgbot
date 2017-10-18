@@ -15,6 +15,7 @@ import shutil
 import stat
 import glob
 import subprocess
+from pkgbot.version import __version__
 
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from GitlabHelper import GitlabArtifactsDownloader
@@ -344,6 +345,11 @@ def process_request(data):
             try:
                 shutil.copyfile(pkg_fullpath, copy_to)
             except IOError:
+                logger.error("{0} - Error copying file: {1} to {2} ".format(
+                    repo,
+                    pkg_fullpath,
+                    copy_to
+                ))
                 continue
 
             # sign rpm
@@ -438,7 +444,8 @@ def main():
     try:
         # start an http server
         server = HTTPServer(('', conf['pkgbot']['port']), RequestHandler)
-        logger.info("Started v1.1 server on port {0}".format(
+        logger.info("Started {0} server on port {1}".format(
+            __version__,
             conf['pkgbot']['port']
         ))
         server.serve_forever()
