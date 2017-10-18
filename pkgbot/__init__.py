@@ -318,10 +318,14 @@ def process_request(data):
     if has_aptly:
         aptly_pub = list(set(aptly_pub))
         for repo in aptly_pub:
-            endpoint = "-".join(repo.split("-")[:-2])
-            distro = repo.split("-")[2]
-            pub_endpoint = "{0}/{1}".format( endpoint, distro )
-            os.write(fifo,"aptly publish repo {0} {1}\n".format(repo, pub_endpoint))
+            endpoint       = "-".join(repo.split("-")[:-2])
+            distro         = repo.split("-")[2]
+            distro_version = repo.split("-")[3]
+            pub_endpoint   = "{0}/{1}".format( endpoint, distro )
+            os.write(fifo,"aptly publish update {0} {1}\n".format(
+                distro_version,
+                pub_endpoint
+            ))
 
     #  if rpm files found, do nescesary stuff to add them
     if has_rpm:
