@@ -438,7 +438,7 @@ def main():
     try:
         # start an http server
         server = HTTPServer(('', conf['pkgbot']['port']), RequestHandler)
-        logger.info("Started server on port {0}".format(
+        logger.info("Started v1.1 server on port {0}".format(
             conf['pkgbot']['port']
         ))
         server.serve_forever()
