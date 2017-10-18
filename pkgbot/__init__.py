@@ -15,6 +15,7 @@ import shutil
 import stat
 import glob
 import subprocess
+from pkgbot.version import __version__
 
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from GitlabHelper import GitlabArtifactsDownloader
@@ -151,20 +152,11 @@ def process_request(data):
         conf['pkgbot']['base-package-path'],
         wanted_repo
     )
-    pyaptly_repo_file = "{0}/{1}.yml".format(
-        conf['pkgbot']['pyaptly-config-path'],
-        wanted_repo
-    )
+
     if not os.path.isdir(incoming_pkg_dir):
         logger.error("{0} - Directory for repo '{1}' not found".format(
             repo,
             incoming_pkg_dir
-        ))
-        return
-    if not os.path.isfile(pyaptly_repo_file):
-        logger.error("{0} - Cannot locate pyaptly config '{1}'".format(
-            repo,
-            pyaptly_repo_file
         ))
         return
 
@@ -316,17 +308,25 @@ def process_request(data):
                     aptly_add.append([aptly_repo, pkg_fullpath])
 
     # everything copied, run aptly-commands
+    aptly_pub = []
     for repo, pkg_path in aptly_add:
-        os.write(fifo, "aptly repo add {0} {1}\n".format(repo, pkg_path))
+        os.write(fifo,"aptly repo add {0} {1}\n".format(
+            repo,
+            pkg_path
+        ))
+        aptly_pub.append(repo)
+
     if has_aptly:
-        os.write(fifo, "pyaptly -c {0} snapshot create\n".format(
-            pyaptly_repo_file))
-        os.write(fifo, "pyaptly -c {0} snapshot update\n".format(
-            pyaptly_repo_file))
-        os.write(fifo, "pyaptly -c {0} publish create\n".format(
-            pyaptly_repo_file))
-        os.write(fifo, "pyaptly -c {0} publish update\n".format(
-            pyaptly_repo_file))
+        aptly_pub = list(set(aptly_pub))
+        for repo in aptly_pub:
+            endpoint       = "-".join(repo.split("-")[:-2])
+            distro         = repo.split("-")[2]
+            distro_version = repo.split("-")[3]
+            pub_endpoint   = "{0}/{1}".format( endpoint, distro )
+            os.write(fifo,"aptly publish update {0} {1}\n".format(
+                distro_version,
+                pub_endpoint
+            ))
 
     #  if rpm files found, do nescesary stuff to add them
     if has_rpm:
@@ -342,7 +342,15 @@ def process_request(data):
             )
 
             # copy file to final location
-            shutil.copyfile(pkg_fullpath, copy_to)
+            try:
+                shutil.copyfile(pkg_fullpath, copy_to)
+            except IOError:
+                logger.error("{0} - Error copying file: {1} to {2} ".format(
+                    repo,
+                    pkg_fullpath,
+                    copy_to
+                ))
+                continue
 
             # sign rpm
             rpmsign_cmd = [
@@ -436,7 +444,8 @@ def main():
     try:
         # start an http server
         server = HTTPServer(('', conf['pkgbot']['port']), RequestHandler)
-        logger.info("Started server on port {0}".format(
+        logger.info("Started {0} server on port {1}".format(
+            __version__,
             conf['pkgbot']['port']
         ))
         server.serve_forever()
