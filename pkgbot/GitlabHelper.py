@@ -18,21 +18,31 @@ class GitlabArtifactsDownloader:
         self.project = False
         self.git = gitlab.Gitlab(
             gitlab_url,
-            gitlab_token
+            gitlab_token,
+            api_version=4
             # ssl_verify=False
         )
 
     def select_project_search(self, project_name):
-        project = self.git.projects.search(project_name)
+        project = self.git.search('projects', project_name)
         if len(project) < 1:
             self.project = False
             return False
         else:
-            self.project = project[0]
+            self.project = self.git.projects.get(project[0]['id'])
             return True
 
     def select_project(self, project_id):
         self.project = self.git.projects.get(project_id)
+
+    def download_build_artifacts(self, build_id, local_filename):
+        if self.project:
+            job = self.project.jobs.get(build_id)
+            if job:
+                artifact_bytes = job.artifacts()
+                f = open(local_filename, 'wb')
+                f.write(artifact_bytes)
+                f.close()
 
     def download_last_artifacts(self, local_filename):
         if self.project:
@@ -74,7 +84,7 @@ class GitlabArtifactsDownloader:
         git_urlsave = self.git._url
         # set gitlab url to main for downloading artifact
         self.git._url = "{0}/".format(self.gitlab_url)
-        dl = self.git._raw_get(path)
+        dl = self.git.http_get(path)
         # restore original api error
         self.git._url = git_urlsave
         return dl
