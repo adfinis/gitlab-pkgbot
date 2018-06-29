@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
 
@@ -193,7 +193,7 @@ def process_request(data):
 
     # download unpack and remove artifacts zip file
     git.select_project(data['project_id'])
-    git.download_last_artifacts(artifacts_zip)
+    git.download_build_artifacts(data['build_id'], artifacts_zip)
     git.unzip(artifacts_zip, dl_path)
     os.remove(artifacts_zip)
     logger.info("{0} - Downloaded to: {1}".format(
