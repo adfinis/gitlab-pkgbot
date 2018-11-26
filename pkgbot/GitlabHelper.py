@@ -15,6 +15,7 @@ class GitlabArtifactsDownloader:
         # disable annoying sslcontext warnings
         requests.packages.urllib3.disable_warnings()
         self.gitlab_url = gitlab_url
+        self.gitlab_token = gitlab_token
         self.project = False
         self.git = gitlab.Gitlab(
             gitlab_url,
@@ -81,10 +82,7 @@ class GitlabArtifactsDownloader:
             pass
 
     def download_raw_file(self, path):
-        git_urlsave = self.git._url
-        # set gitlab url to main for downloading artifact
-        self.git._url = "{0}/".format(self.gitlab_url)
-        dl = self.git.http_get(path)
-        # restore original api error
-        self.git._url = git_urlsave
+        req_url     = "{0}/{1}".format(self.gitlab_url, path)
+        req_headers = {"Private-Token": self.gitlab_token}
+        dl          = requests.get(req_url, headers=req_headers)
         return dl
