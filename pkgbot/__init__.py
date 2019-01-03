@@ -54,15 +54,14 @@ def process_request(data):
         conf['gitlab']['token']
     )
 
-    config_file = "/{0}/raw/{1}/.pkg-bot.yml".format(
-        repo,
-        data['ref']
-    )
-
     # check .pkg-bot.yml
     # TODO: better error checking
     try:
-        repo_conf_dl   = git.download_raw_file(config_file)
+        repo_conf_dl   = git.download_raw_file(
+            ".pkg-bot.yml",
+            data['project_id'],
+            data['ref']
+        )
         rc             = yaml.load(repo_conf_dl.text)
         repo_conf      = rc['pkgbot']
     except:

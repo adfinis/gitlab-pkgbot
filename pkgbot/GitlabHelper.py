@@ -81,8 +81,13 @@ class GitlabArtifactsDownloader:
         except:
             pass
 
-    def download_raw_file(self, path):
-        req_url     = "{0}/{1}".format(self.gitlab_url, path)
+    def download_raw_file(self, path, project_id, ref="master"):
+        req_url     = "{0}/api/v4/projects/{1}/repository/files/{2}/raw?ref={3}".format(
+          self.gitlab_url,
+          project_id,
+          path,
+          ref
+        )
         req_headers = {"Private-Token": self.gitlab_token}
         dl          = requests.get(req_url, headers=req_headers)
         return dl
