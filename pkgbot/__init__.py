@@ -274,9 +274,9 @@ def process_request(data):
                                                     version
                                                     )
 
-                # if the pkg-file allready exists, do nothing
+                # if the pkg-file already exists, do nothing
                 if os.path.isfile(pkg_fullpath):
-                    logger.warning("{0} - File {1} allready exists, "
+                    logger.warning("{0} - File {1} already exists, "
                                    "skipping".format(
                                        repo,
                                        pkg_file
