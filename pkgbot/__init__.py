@@ -295,7 +295,7 @@ def process_request(data):
                 shutil.copyfile(pkg, pkg_fullpath)
 
                 # store repo and file for aptly/createrepo
-                if distro == 'rhel' or distro == 'centos':
+                if distro in ['rhel', 'centons', 'fedora']:
                     has_rpm = True
                     rpm_add.append([pkg_fullpath,
                                     wanted_repo,
