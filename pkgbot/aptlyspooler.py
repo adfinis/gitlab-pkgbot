@@ -57,7 +57,7 @@ class SimpleSpooler(threading.Thread):
         Add an item to the queue
         """
         if item:
-            logger.debug("New incoming item")
+            logger.debug("New incoming item: '{0}'".format(item))
         self.queue.put(item)
 
     def exit(self):
@@ -150,12 +150,15 @@ class SimpleSpooler(threading.Thread):
         Main loop for socket reading
         """
         try:
+            temp = str()
             while True and not self.request_exit:
                 data = os.read(self.fifo, FIFO_MAX_LEN)
-                if data:
-                    d_cmds  = data.strip().split("\n")
+                temp += data
+                if temp and temp.endswith("\n"):
+                    d_cmds  = temp.strip().split("\n")
                     for cmd in d_cmds:
                         self.add(cmd)
+                    temp = str()
                 time.sleep(0.1)
         except KeyboardInterrupt:
             self.exit()
