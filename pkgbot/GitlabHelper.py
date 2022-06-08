@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 
@@ -11,6 +11,7 @@ class GitlabArtifactsDownloader:
     """
     Class to download and exract build aritfacts from gitlab
     """
+
     def __init__(self, gitlab_url, gitlab_token):
         # disable annoying sslcontext warnings
         requests.packages.urllib3.disable_warnings()
@@ -25,12 +26,12 @@ class GitlabArtifactsDownloader:
         )
 
     def select_project_search(self, project_name):
-        project = self.git.search('projects', project_name)
+        project = self.git.search("projects", project_name)
         if len(project) < 1:
             self.project = False
             return False
         else:
-            self.project = self.git.projects.get(project[0]['id'])
+            self.project = self.git.projects.get(project[0]["id"])
             return True
 
     def select_project(self, project_id):
@@ -41,7 +42,7 @@ class GitlabArtifactsDownloader:
             job = self.project.jobs.get(build_id)
             if job:
                 artifact_bytes = job.artifacts()
-                f = open(local_filename, 'wb')
+                f = open(local_filename, "wb")
                 f.write(artifact_bytes)
                 f.close()
 
@@ -51,8 +52,7 @@ class GitlabArtifactsDownloader:
             builds = self.project.builds.list()
             last_build = builds[0]
             artifacts_dl_url = "{0}/builds/{1}/artifacts/download".format(
-                self.project.path_with_namespace,
-                last_build.id
+                self.project.path_with_namespace, last_build.id
             )
             # save git api url
             git_urlsave = self.git._url
@@ -65,7 +65,7 @@ class GitlabArtifactsDownloader:
             self.save_download(dl, local_filename)
 
     def save_download(self, dl, local_filename):
-        f = open(local_filename, 'wb')
+        f = open(local_filename, "wb")
         # loop over all chunks and append them to file
         for chunk in dl.iter_content(chunk_size=512 * 1024):
             # filter out keepalive packages
@@ -82,12 +82,9 @@ class GitlabArtifactsDownloader:
             pass
 
     def download_raw_file(self, path, project_id, ref="master"):
-        req_url     = "{0}/api/v4/projects/{1}/repository/files/{2}/raw?ref={3}".format(
-          self.gitlab_url,
-          project_id,
-          path,
-          ref
+        req_url = "{0}/api/v4/projects/{1}/repository/files/{2}/raw?ref={3}".format(
+            self.gitlab_url, project_id, path, ref
         )
         req_headers = {"Private-Token": self.gitlab_token}
-        dl          = requests.get(req_url, headers=req_headers)
+        dl = requests.get(req_url, headers=req_headers)
         return dl
