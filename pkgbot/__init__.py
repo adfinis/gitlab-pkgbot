@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 
@@ -17,8 +17,8 @@ import glob
 import subprocess
 from pkgbot.version import __version__
 
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from GitlabHelper import GitlabArtifactsDownloader
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from .GitlabHelper import GitlabArtifactsDownloader
 
 
 # init logging
@@ -64,8 +64,8 @@ def process_request(data):
         )
         rc             = yaml.load(repo_conf_dl.text)
         repo_conf      = rc['pkgbot']
-    except:
-        logger.error("{0} - Config for repo not found or invalid".format(repo))
+    except Exception as e:
+        logger.error("{0} - Config for repo not found or invalid Error: {1}".format(repo, e))
         return
 
     # .pkg-bot.yml is dict-type
@@ -74,9 +74,9 @@ def process_request(data):
             pkg_data       = repo_conf['packages']
             valid_branches = repo_conf['branches']
             wanted_repo    = repo_conf['repo']
-        except:
-            logger.error("{0} - Config for repo not found or invalid".format(
-                repo))
+        except Exception as e:
+            logger.error("{0} [dict-type] - Config for repo not found or invalid Error: {1}".format(
+            	repo, e))
             return
 
     # .pkg-bot.yml is list-type, find actual block
@@ -118,9 +118,9 @@ def process_request(data):
             pkg_data       = repo_conf['packages']
             valid_branches = repo_conf['branches']
             wanted_repo    = repo_conf['repo']
-        except:
-            logger.error("{0} - Config for repo not found or invalid".format(
-                repo))
+        except Exception as e:
+            logger.error("{0} - Config for repo not found or invalid Error: {1}".format(
+                repo, e))
             return
 
     # unknown .pkgbot.yml
@@ -144,7 +144,7 @@ def process_request(data):
                          fifo_socket_location
                      ))
         return
-    fifo = os.open(fifo_socket_location, os.O_NONBLOCK | os.O_WRONLY)
+    fifo = os.open(fifo_socket_location, os.O_NONBLOCK | os.O_WRONLY, buffering=0)
 
     # check if wanted repo exists and fail if not
     incoming_pkg_dir = "{0}/{1}".format(

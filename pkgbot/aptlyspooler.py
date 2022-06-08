@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 
@@ -6,7 +6,7 @@ import os
 import sys
 import time
 import posix
-import Queue
+import queue
 import signal
 import logging
 import argparse
@@ -44,7 +44,7 @@ class SimpleSpooler(threading.Thread):
     def __init__(self, fifo, save_file=False):
         threading.Thread.__init__(self)
         self.fifo = fifo
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
         self.request_exit = False
         signal.signal(signal.SIGTERM, self.catch_exit_signal)
         if save_file:
@@ -83,7 +83,7 @@ class SimpleSpooler(threading.Thread):
                 item = self.queue.get_nowait()
                 if item:
                     unfinished.append(item)
-            except Queue.Empty:
+            except queue.Empty:
                 break
         if len(unfinished) < 1:
             return
