@@ -25,8 +25,7 @@ def get_logger(prefix="aptly-spooler", project=False):
     if project:
         loggername = "{0} - {1}".format(prefix, project)
     logger = logging.getLogger(loggername)
-    log_formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    log_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     ch = logging.StreamHandler()
     ch.setFormatter(log_formatter)
     logger.setLevel(10)
@@ -41,6 +40,7 @@ class SimpleSpooler(threading.Thread):
     """
     Implement a simple fifo socket queue
     """
+
     def __init__(self, fifo, save_file=False):
         threading.Thread.__init__(self)
         self.fifo = fifo
@@ -87,10 +87,8 @@ class SimpleSpooler(threading.Thread):
                 break
         if len(unfinished) < 1:
             return
-        logger.info("{0} unfinished jobs in queue, saving to disk".format(
-            len(unfinished)
-        ))
-        with open(self.save_file, 'w') as savefile:
+        logger.info("{0} unfinished jobs in queue, saving to disk".format(len(unfinished)))
+        with open(self.save_file, "w") as savefile:
             savefile.write("\n".join(unfinished))
 
     def load_jobs(self):
@@ -103,12 +101,11 @@ class SimpleSpooler(threading.Thread):
             jobs = savefile.readlines()
             if len(jobs) < 1:
                 return
-            logger.info("{0} unfinished jobs found on disk, loading".format(
-                len(jobs)))
+            logger.info("{0} unfinished jobs found on disk, loading".format(len(jobs)))
             for job in jobs:
                 self.queue.put(job.strip())
             # empty file
-            open(self.save_file, 'w').close()
+            open(self.save_file, "w").close()
 
     def catch_exit_signal(self, signum, frame):
         """
@@ -155,7 +152,7 @@ class SimpleSpooler(threading.Thread):
                 data = os.read(self.fifo, FIFO_MAX_LEN)
                 temp += data
                 if temp and temp.endswith("\n"):
-                    d_cmds  = temp.strip().split("\n")
+                    d_cmds = temp.strip().split("\n")
                     for cmd in d_cmds:
                         self.add(cmd)
                     temp = str()
@@ -165,14 +162,8 @@ class SimpleSpooler(threading.Thread):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="aptly fifo socket queue"
-    )
-    parser.add_argument(
-        "--socket",
-        default=FIFO_SOCKET,
-        help="Socket file"
-    )
+    parser = argparse.ArgumentParser(description="aptly fifo socket queue")
+    parser.add_argument("--socket", default=FIFO_SOCKET, help="Socket file")
     parser.add_argument(
         "--save-file",
         default=UF_JOB_FILE,
@@ -191,5 +182,5 @@ def main():
     spooler.start_sock()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
