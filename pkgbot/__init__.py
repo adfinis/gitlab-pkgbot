@@ -132,7 +132,7 @@ def process_request(data):
             "{1}".format(repo, fifo_socket_location)
         )
         return
-    fifo = os.open(fifo_socket_location, os.O_NONBLOCK | os.O_WRONLY, buffering=0)
+    fifo = os.open(fifo_socket_location, os.O_NONBLOCK | os.O_WRONLY)
 
     # check if wanted repo exists and fail if not
     incoming_pkg_dir = "{0}/{1}".format(conf["pkgbot"]["base-package-path"], wanted_repo)
@@ -317,7 +317,7 @@ def process_request(data):
         for distro in createrepo_distros:
             rpm_repo_path = "{0}/{1}/{2}".format(conf["pkgbot"]["public-root"], wanted_repo, distro)
             # createrepo
-            createrepo_cmd = ["createrepo", rpm_repo_path]
+            createrepo_cmd = ["createrepo_c", rpm_repo_path]
             subprocess.check_call(createrepo_cmd)
 
             # sign repodata
@@ -347,7 +347,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
-        self.wfile.write("")
+        self.wfile.write("".encode())
 
     def do_GET(self):
         self.send_headers()
