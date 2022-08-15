@@ -149,7 +149,7 @@ class SimpleSpooler(threading.Thread):
         try:
             temp = str()
             while True and not self.request_exit:
-                data = os.read(self.fifo, FIFO_MAX_LEN)
+                data = os.read(self.fifo, FIFO_MAX_LEN).decode()
                 temp += data
                 if temp and temp.endswith("\n"):
                     d_cmds = temp.strip().split("\n")
