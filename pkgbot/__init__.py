@@ -281,7 +281,7 @@ def process_request(data):
             pub_endpoint = "{0}/{1}".format(endpoint, distro)
             os.write(
                 fifo,
-                "aptly publish update {0} {1}\n".format(distro_version, pub_endpoint).encode('ASCII'),
+                "aptly publish update {0} {1}\n".format(distro_version, pub_endpoint).encode(),
             )
 
     #  if rpm files found, do nescesary stuff to add them
