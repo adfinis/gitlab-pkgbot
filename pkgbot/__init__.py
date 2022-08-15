@@ -269,7 +269,7 @@ def process_request(data):
     # everything copied, run aptly-commands
     aptly_pub = []
     for repo, pkg_path in aptly_add:
-        os.write(fifo, "aptly repo add {0} {1}\n".format(repo, pkg_path).encode('ASCII'))
+        os.write(fifo, "aptly repo add {0} {1}\n".format(repo, pkg_path).encode())
         aptly_pub.append(repo)
 
     if has_aptly:
