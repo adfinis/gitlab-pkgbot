@@ -269,7 +269,7 @@ def process_request(data):
     # everything copied, run aptly-commands
     aptly_pub = []
     for repo, pkg_path in aptly_add:
-        os.write(fifo, "aptly repo add {0} {1}\n".format(repo, pkg_path))
+        os.write(fifo, "aptly repo add {0} {1}\n".format(repo, pkg_path).encode('ASCII'))
         aptly_pub.append(repo)
 
     if has_aptly:
@@ -281,7 +281,7 @@ def process_request(data):
             pub_endpoint = "{0}/{1}".format(endpoint, distro)
             os.write(
                 fifo,
-                "aptly publish update {0} {1}\n".format(distro_version, pub_endpoint),
+                "aptly publish update {0} {1}\n".format(distro_version, pub_endpoint).encode('ASCII'),
             )
 
     #  if rpm files found, do nescesary stuff to add them
