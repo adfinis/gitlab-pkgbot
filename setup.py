@@ -4,7 +4,6 @@
 
 from setuptools import setup
 from setuptools import find_packages
-import codecs
 import sys
 import os
 
@@ -17,7 +16,7 @@ else:
 
 __version__  = None
 version_file = "pkgbot/version.py"
-with codecs.open(version_file, encoding="UTF-8") as f:
+with open(version_file, encoding="UTF-8") as f:
     code = compile(f.read(), version_file, 'exec')
     exec(code)
 
@@ -46,7 +45,7 @@ def find_data(packages, extensions):
     return data
 
 
-with codecs.open('README.md', 'r', encoding="UTF-8") as f:
+with open('README.md', encoding="UTF-8") as f:
     README_TEXT = f.read()
 
 

@@ -122,7 +122,7 @@ class SimpleSpooler(threading.Thread):
         try:
             subprocess.check_call(arr, stderr=subprocess.STDOUT)
         except (OSError, subprocess.CalledProcessError) as e:
-            logger.warn(e)
+            logger.warning(e)
         logger.info("done processing: '{0}'".format(item))
 
     def run(self):
@@ -174,7 +174,7 @@ def main():
     try:
         os.mkfifo(args.socket)
     except OSError as e:
-        logger.warn("Failed to create FIFO: {0}".format(e))
+        logger.warning("Failed to create FIFO: {0}".format(e))
 
     fifo = posix.open(args.socket, posix.O_RDWR)
     spooler = SimpleSpooler(fifo, args.save_file)

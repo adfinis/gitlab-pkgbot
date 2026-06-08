@@ -54,7 +54,7 @@ def process_request(data):
     # TODO: better error checking
     try:
         repo_conf_dl = git.download_raw_file(".pkg-bot.yml", data["project_id"], data["ref"])
-        rc = yaml.load(repo_conf_dl.text)
+        rc = yaml.safe_load(repo_conf_dl.text)
         repo_conf = rc["pkgbot"]
     except Exception as e:
         logger.error("{0} - Config for repo not found or invalid Error: {1}".format(repo, e))
@@ -374,7 +374,7 @@ def main():
     # load config
     try:
         with open(sys.argv[1]) as f:
-            conf = yaml.load(f)
+            conf = yaml.safe_load(f)
     except IOError as e:
         print(e)
         sys.exit(1)
