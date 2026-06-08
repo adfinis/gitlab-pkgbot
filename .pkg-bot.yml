@@ -5,10 +5,9 @@ pkgbot:
       - master
       - testing
     packages:
+      centos:
+        centos7:
+          - dist/python-gitlab-pkgbot-*.noarch.rpm
       debian:
-        bullseye:
-          - dist/python-gitlab-pkgbot_*_all.deb
-        bookworm:
-          - dist/python-gitlab-pkgbot_*_all.deb
-        trixie:
+        jessie:
           - dist/python-gitlab-pkgbot_*_all.deb
