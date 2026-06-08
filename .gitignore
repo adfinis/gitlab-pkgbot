@@ -2,3 +2,6 @@ venv-dev
 non-git
 *.pyc
 .daemonpid
+build
+dist
+*.egg-info
