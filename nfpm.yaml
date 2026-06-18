@@ -1,0 +1,49 @@
+name: python3-gitlab-pkgbot
+arch: all
+platform: linux
+version: ${PKGBOT_VERSION}
+section: misc
+priority: optional
+maintainer: Adfinis AG <https://adfinis.com/>
+description: GitLab CI Package Bot
+homepage: https://github.com/adfinis/gitlab-pkgbot
+license: GPL-3.0
+
+depends:
+  - expect
+
+overrides:
+  deb:
+    depends:
+      - expect
+      - python3-yaml | python-yaml
+      - python3-requests | python-requests
+      - python3-gitlab | python-gitlab
+  rpm:
+    depends:
+      - expect
+      - python3-pyyaml
+      - python3-requests
+      - python3-python-gitlab
+
+scripts:
+  postinstall: pkgbot/scripts/pkg-mkdirs.sh
+
+contents:
+  - src: build/package-root/usr/lib/python3/dist-packages
+    dst: /usr/lib/python3/dist-packages
+    type: tree
+  - src: build/package-root/usr/bin
+    dst: /usr/bin
+    type: tree
+  - src: pkgbot/config/gitlab-pkgbot.yaml
+    dst: /etc/gitlab-pkgbot.yaml
+    type: config|noreplace
+  - src: pkgbot/config/gitlab-pkgbot.service
+    dst: /lib/systemd/system/gitlab-pkgbot.service
+  - src: pkgbot/config/aptly-spooler.service
+    dst: /lib/systemd/system/aptly-spooler.service
+  - src: pkgbot/scripts/rpmsign-nointeractive.sh
+    dst: /usr/local/bin/rpmsign-nointeractive.sh
+    file_info:
+      mode: 0755

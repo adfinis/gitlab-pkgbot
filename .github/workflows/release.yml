@@ -8,49 +8,49 @@ on:
 permissions:
   contents: write
 
+# Pinned tool versions (bump in one place).
 env:
-  FPM_VERSION: "1.17.0"
-  SETUPTOOLS_VERSION: "82.0.1"
-  PACKAGING_VERSION: "26.2"
+  GO_VERSION: "1.26.4"
+  GOTOOLCHAIN: local
+  UV_VERSION: "0.11.21"
+  NFPM_VERSION: "v2.46.3"
+  SEMANTIC_RELEASE_VERSION: "v2.31.0"
+  GHR_VERSION: "v0.18.3"
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
         with:
           fetch-depth: 0
 
-      # Compute the next version from the commit history without creating the
-      # release yet, so we can build the packages with the correct version
-      # before publishing them as release assets.
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Go
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+
       - name: Determine next version
         id: version
-        uses: go-semantic-release/action@2e9dc4247a6004f8377781bef4cb9dad273a741f # v1.24.1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          allow-initial-development-versions: true
-          dry: true
-
-      - name: Set up Python
-        if: steps.version.outputs.version != ''
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: '3.12'
-
-      - name: Set up Ruby (for fpm)
-        if: steps.version.outputs.version != ''
-        uses: ruby/setup-ruby@89f90524b88a01fe6e0b732220432cc6142926af # v1.313.0
-        with:
-          ruby-version: '3.2'
-
-      - name: Install build dependencies
-        if: steps.version.outputs.version != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gem install --no-document fpm --version "${FPM_VERSION}"
-          # fpm's python source plugin imports `packaging` and shells out to
-          # setuptools, so both must be present in the build environment.
-          pip install "setuptools==${SETUPTOOLS_VERSION}" "packaging==${PACKAGING_VERSION}"
+          rm -f .version-unreleased
+          go run "github.com/go-semantic-release/semantic-release/v2/cmd/semantic-release@${SEMANTIC_RELEASE_VERSION}" \
+            --dry \
+            --version-file \
+            --allow-initial-development-versions \
+            --allow-no-changes \
+            --token "${GITHUB_TOKEN}"
+          if [ -s .version-unreleased ]; then
+            echo "version=$(cat .version-unreleased)" >> "${GITHUB_OUTPUT}"
+          fi
 
       - name: Build deb and rpm packages
         if: steps.version.outputs.version != ''
@@ -58,19 +58,20 @@ jobs:
           PKGBOT_VERSION: ${{ steps.version.outputs.version }}
         run: make all-pkg
 
-      # Create the actual release: tag, GitHub release and changelog.
       - name: Create release
         if: steps.version.outputs.version != ''
-        uses: go-semantic-release/action@2e9dc4247a6004f8377781bef4cb9dad273a741f # v1.24.1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          allow-initial-development-versions: true
-          changelog-file: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          go run "github.com/go-semantic-release/semantic-release/v2/cmd/semantic-release@${SEMANTIC_RELEASE_VERSION}" \
+            --version-file \
+            --ghr \
+            --allow-initial-development-versions \
+            --token "${GITHUB_TOKEN}"
+          test "$(cat .version)" = "${{ steps.version.outputs.version }}"
 
-      # Attach the built deb and rpm packages to the release that
-      # go-semantic-release just created (tag is v<version>).
       - name: Upload packages to release
         if: steps.version.outputs.version != ''
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "v${{ steps.version.outputs.version }}" dist/*.deb dist/*.rpm --clobber
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: go run "github.com/tcnksm/ghr@${GHR_VERSION}" -replace $(cat .ghr) dist

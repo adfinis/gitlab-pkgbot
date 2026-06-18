@@ -8,7 +8,7 @@ User=mirror
 Group=mirror
 RuntimeDirectory=aptly-spooler
 RuntimeDirectoryMode=0750
-ExecStart=/usr/local/bin/aptly-spooler --socket=/var/run/aptly-spooler/fifo.sock --save-file=/var/run/aptly-spooler/jobs
+ExecStart=/usr/bin/aptly-spooler --socket=/var/run/aptly-spooler/fifo.sock --save-file=/var/run/aptly-spooler/jobs
 
 [Install]
 WantedBy=multi-user.target

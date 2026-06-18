@@ -1,0 +1,19 @@
+{
+  "plugins": {
+    "commit-analyzer": {
+      "name": "default@1.15.0"
+    },
+    "ci-condition": {
+      "name": "default@1.11.0"
+    },
+    "changelog-generator": {
+      "name": "default@1.15.0"
+    },
+    "provider": {
+      "name": "github@1.19.0"
+    },
+    "files-updater": {
+      "names": []
+    }
+  }
+}
