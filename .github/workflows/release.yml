@@ -11,6 +11,7 @@ permissions:
 env:
   FPM_VERSION: "1.17.0"
   SETUPTOOLS_VERSION: "82.0.1"
+  PACKAGING_VERSION: "26.2"
 
 jobs:
   release:
@@ -47,7 +48,9 @@ jobs:
         if: steps.version.outputs.version != ''
         run: |
           gem install --no-document fpm --version "${FPM_VERSION}"
-          pip install "setuptools==${SETUPTOOLS_VERSION}"
+          # fpm's python source plugin imports `packaging` and shells out to
+          # setuptools, so both must be present in the build environment.
+          pip install "setuptools==${SETUPTOOLS_VERSION}" "packaging==${PACKAGING_VERSION}"
 
       - name: Build deb and rpm packages
         if: steps.version.outputs.version != ''
