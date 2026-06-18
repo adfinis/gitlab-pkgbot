@@ -1,6 +1,11 @@
 import os
+from importlib import metadata
 
-# Allow the build/release pipeline to override the version from the release
-# tag (see .github/workflows/release.yml). Falls back to the literal below so
-# that local builds and editable installs keep working.
-__version__ = os.environ.get("PKGBOT_VERSION", "").lstrip("v") or "1.1.9"
+__version__ = os.environ.get("PKGBOT_VERSION", "").lstrip("v")
+
+if not __version__:
+    try:
+        __version__ = metadata.version("gitlab-pkgbot")
+    except metadata.PackageNotFoundError:
+        # Running from a source checkout without an installed distribution.
+        __version__ = "0.0.0"

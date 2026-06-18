@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gitlab-pkgbot"
+description = "GitLab CI Package Bot"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Adfinis AG" }]
+keywords = ["GitLab", "CI", "pkgbot", "bot"]
+dependencies = ["requests", "pyyaml", "python-gitlab"]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/adfinis/gitlab-pkgbot"
+
+[project.scripts]
+gitlab-pkgbot = "pkgbot:main"
+aptly-spooler = "pkgbot.aptlyspooler:main"
+
+[tool.setuptools.packages.find]
+include = ["pkgbot*"]
+
+[tool.setuptools.package-data]
+pkgbot = ["config/*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "pkgbot.version.__version__" }
